@@ -1,0 +1,51 @@
+type DoctorSchedule {
+    id: ID!
+    doctorId: String!
+    department: String!
+    doctorName: String!
+    workDate: String!
+    shiftType: String!
+    startTime: String!
+    endTime: String!
+    maxPatients: Int!
+}
+
+type Query {
+    # 支援根據 科別、醫師姓名、起訖日期 進行進階查詢
+    searchDoctorSchedules(
+        department: String!, 
+        doctorName: String!, 
+        startDate: String!, 
+        endDate: String!
+    ): [DoctorSchedule]
+}
+
+type Mutation {
+    # 1. 新增排班
+    createSchedule(
+        doctorId: String!,
+        department: String!,
+        doctorName: String!,
+        workDate: String!,
+        shiftType: String!,
+        startTime: String!,
+        endTime: String!,
+        maxPatients: Int!
+    ): DoctorSchedule
+
+    # 2. 修改排班
+    updateSchedule(
+        id: ID!,
+        doctorId: String!,
+        department: String!,
+        doctorName: String!,
+        workDate: String!,
+        shiftType: String!,
+        startTime: String!,
+        endTime: String!,
+        maxPatients: Int!
+    ): DoctorSchedule
+
+    # 3. 刪除排班
+    deleteSchedule(id: ID!): Boolean
+}

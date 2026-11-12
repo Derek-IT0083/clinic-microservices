@@ -1,0 +1,73 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: clinic-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      # 透過逗號分隔讓 MySQL 初始化時自動建立多個獨立資料庫
+      MYSQL_DATABASES: patient_db,clinic_db,appointment_db,service_db
+    ports:
+      - "3307:3306"
+    networks:
+      - clinic-net
+    volumes:
+      # 利用初始化腳本資料夾自動建立多個資料庫
+      - ./init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  patient-service:
+    build: ./patient-service
+    container_name: clinic-patient-service
+    ports:
+      - "8090:8090"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - clinic-net
+
+  schedule-service:
+    build: ./schedule-service
+    container_name: clinic-schedule-service
+    ports:
+      - "8089:8089"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - clinic-net
+
+  appointment-service:
+    build: ./appointment-service
+    container_name: clinic-appointment-service
+    ports:
+      - "8091:8091"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - clinic-net
+
+networks:
+  clinic-net:
+    driver: bridge
